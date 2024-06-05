@@ -1,0 +1,41 @@
+{% extends "tables.html" %}
+{% block body %}
+
+<table>
+    <thead>
+        <tr>
+            <th>Pending Id</th>
+            <th>Equipment Type</th>
+            <th>Equipment Unique Key</th>
+            <th>Student Number</th>
+            <th>Student Name</th>
+            <th>Verify Status</th>
+            <th>Expected Return Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in pending %}
+            <tr>
+                <td>{{ item.pending_id }}</td>
+                <td>{{ item.equip_type }}</td>
+                <td>{{ item.equip_unique_key }}</td>
+                <td>{{ item.student_number }}</td>
+                <td>{{ item.student_name }}</td>
+                <td>{{ 'Yes' if item.is_verified else 'No' }}</td>
+                <td>{{ item.requested_end_date }}</td>
+                <td>
+                    <a href="{{ url_for('admin.verify_item', unique=item.equip_unique_key) }}">
+                        <button class="btn btn-outline-success">Verify</button>
+                    </a>
+                    <a href="{{ url_for('admin.disproof_item', pending_id=item.pending_id) }}">
+                        <button class="btn btn-outline-danger">Reject</button>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+    </tbody>
+</table>
+
+
+{% endblock %}

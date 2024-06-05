@@ -1,18 +1,22 @@
 from flask_restful import Resource, abort, fields, marshal_with, reqparse
-from flask import request, jsonify
-from models.database import db, Equipment, Student, Pending
-
-equipment_resource_fields = {
-    'equip_id' : fields.Integer,
-    'equip_type': fields.String,
-    'equip_unique_key': fields.String,
-    'is_available': fields.Boolean,
-    'is_pending': fields.Boolean
-}
+from flask import request, jsonify, session
+from models.database import db, Equipment, Student, Pending, Borrowed, Completed
+import random
+import string
+import datetime
 
 class ShowEquipments(Resource):
     def get(self):
-        equipment = Equipment.query.all()
+        search_query = request.args.get('search', '').lower()
+        if not search_query:
+            equipment = Equipment.query.filter_by(is_available=1).order_by(Equipment.equip_type.asc()).all()
+        else:
+            # Adjust this query to match your database structure and search requirements
+            equipment = Equipment.query.filter_by(is_available=1).filter(
+                (Equipment.equip_id.ilike(f'%{search_query}%')) | 
+                (Equipment.equip_type.ilike(f'%{search_query}%')) | 
+                (Equipment.equip_unique_key.ilike(f'%{search_query}%'))
+            ).order_by(Equipment.equip_type.asc()).all()
         equip_id = [e.equip_id for e in equipment]
         equip_type = [e.equip_type for e in equipment]
         equip_unique_key = [e.equip_unique_key for e in equipment]
@@ -28,44 +32,30 @@ class ShowEquipments(Resource):
         }    
         
         return equipments
+    
+    @staticmethod
+    def generate_unique_id(length):
+        characters = string.ascii_letters + string.digits
+        return ''.join(random.choices(characters, k=length))
 
 
-post_args_equip = reqparse.RequestParser()
-post_args_equip.add_argument("args_equip_type", type=str, required=True, help="type is required")
-post_args_equip.add_argument("args_equip_unique_key", type=str, required=True, help="unique_key is required")
-post_args_equip.add_argument("args_is_available", type=bool, required=True, help="is_available is required")
-post_args_equip.add_argument("args_is_pending", type=bool, required=True, help="is_pending is required")
+equipment_resource_fields = {
+    'equip_id' : fields.Integer,
+    'equip_type': fields.String,
+    'equip_unique_key': fields.String,
+    'is_available': fields.Boolean,
+    'is_pending': fields.Boolean
+}
 
 class Equipments(Resource):
     @marshal_with(equipment_resource_fields)
     def get(self, unique_key):
-        
         equipment = Equipment.query.filter_by(equip_unique_key=unique_key).first()
         if not equipment:
             abort(409, message="Not Found")
         
         return equipment
     
-    @marshal_with(equipment_resource_fields)
-    def post(self, unique):
-        args = post_args_equip.parse_args()
-        equipment = Equipment.query.filter_by(equip_unique_key=unique).first()
-        if equipment:
-            abort(409, message="Equipment Exists")
-        equip_obj = Equipment(equip_type=args['args_equip_type'],
-                              equip_unique_key=unique,
-                              is_available=args['args_is_available'],
-                              is_pending=args['args_is_pending']
-                              )
-        
-        
-        # Add the new equipment object to the session
-        db.session.add(equip_obj)
-
-        # Commit the changes to the database
-        db.session.commit()
-        
-        return equip_obj, 201
     
 
 
@@ -78,6 +68,7 @@ post_args_student.add_argument("args_student_email_address", type=str, required=
 post_args_student.add_argument("args_student_firstname", type=str, required=True, help="student firstname is required")
 post_args_student.add_argument("args_student_surname", type=str, required=True, help="student surname is required")
 post_args_student.add_argument("args_requested_item", type=str, required=True, help="equipment unique key is required")
+post_args_student.add_argument("args_requested_end_date", type=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), required=True, help="return end date is required")
 
 student_resource_fields = {
     'student_number':  fields.String,
@@ -87,22 +78,33 @@ student_resource_fields = {
     'student_email_address': fields.String,
     'student_firstname': fields.String,
     'student_surname': fields.String,
-    'requested_item': fields.String
+    'requested_item': fields.String,
+    'args_requested_end_date': fields.String
 }
+
+class EachStudent(Resource):
+    @marshal_with(student_resource_fields)
+    def get(self, student_number):
+        if 'admin_login' not in session:
+            abort(401, message="Unauthorized")
+        student = Student.query.filter_by(student_number=student_number).first()
+        if not student:
+            abort(409, message="Not Found")
+        return student
 
 class Students(Resource):
     @marshal_with(student_resource_fields)
     def post(self):
         args = post_args_student.parse_args()
         student_obj = Student(
-                student_number=args['args_student_number'],
-                student_department=args['args_student_department'],
-                student_year=args['args_student_year'],
-                student_section=args['args_student_section'],
-                student_email_address=args['args_student_email_address'],
-                student_firstname=args['args_student_firstname'],
-                student_surname=args['args_student_surname'],
-                requested_item=args['args_requested_item']
+                student_number=args['args_student_number'].strip(),
+                student_department=args['args_student_department'].strip(),
+                student_year=args['args_student_year'].strip(),
+                student_section=args['args_student_section'].strip(),
+                student_email_address=args['args_student_email_address'].strip(),
+                student_firstname=args['args_student_firstname'].strip(),
+                student_surname=args['args_student_surname'].strip(),
+                requested_item=args['args_requested_item'].strip()
             )
         equip_obj = Equipment.query.filter_by(equip_unique_key=args['args_requested_item']).first()
         if equip_obj.is_available:
@@ -111,10 +113,9 @@ class Students(Resource):
                 equip_unique_key=equip_obj.equip_unique_key,
                 student_number=student_obj.student_number,
                 student_name=f"{student_obj.student_surname}, {student_obj.student_firstname}",
-                is_verified=0
+                is_verified=0,
+                requested_end_date=args['args_requested_end_date']
             )
-            equip_obj.is_pending=1
-            equip_obj.is_available=0
             student_obj.status='requested'
             db.session.add(pending_obj)
             db.session.add(student_obj)
@@ -125,24 +126,71 @@ class Students(Resource):
             return {"message": "item not available"}, 418
         
 
-
 class PendingItems(Resource):
     def get(self):
-        pending = Pending.query.all()
-        pending_id = [p.pending_id for p in pending]
-        equip_type = [p.equip_type for p in pending]
-        equip_unique_key = [p.equip_unique_key for p in pending]
-        student_number = [p.student_number for p in pending]
-        student_name = [p.student_name for p in pending]
-        is_verified = [p.is_verified for p in pending]
-
-        pending_items = {
-            "pending_id": pending_id,
-            "equip_type": equip_type,
-            "equip_unique_key": equip_unique_key,
-            "student_number": student_number,
-            "student_name": student_name,
-            "is_verified": is_verified
-        }
+        pending = Pending.query.order_by(Pending.pending_id.desc()).all()
+        pending_items = [{
+                "pending_id": p.pending_id,
+                "equip_type": p.equip_type,
+                "equip_unique_key": p.equip_unique_key,
+                "student_number": p.student_number,
+                "student_name": p.student_name,
+                "is_verified": p.is_verified,
+                "requested_end_date": p.requested_end_date.isoformat()  # Convert date to string
+            } for p in pending]
 
         return pending_items
+    
+class BorrowedItems(Resource):
+    def get(self):
+        borrowed = Borrowed.query.order_by(Borrowed.borrow_id.desc()).all()
+        borrow_id = [b.borrow_id for b in borrowed]
+        is_claimed = [b.is_claimed for b in borrowed]
+        is_returned = [b.is_returned for b in borrowed]
+        pending_id = [b.pending_id for b in borrowed]
+
+        borrowed_items = {
+            "borrow_id": borrow_id,
+            "is_claimed": is_claimed,
+            "is_returned": is_returned,
+            "pending_id": pending_id
+        }
+
+        return borrowed_items
+    
+
+class CompletedItems(Resource):
+    def get(self):
+        completed = Completed.query.order_by(Completed.completed_id.desc()).all()
+        if 'admin_login' in session:
+            completed_id = [c.completed_id for c in completed]
+            student_number = [c.student_number for c in completed]
+            student_department = [c.student_department for c in completed]
+            student_name = [c.student_name for c in completed]
+            equip_type = [c.equip_type for c in completed]
+            equip_unique_key = [c.equip_unique_key for c in completed]
+
+            completed_items = {
+                "completed_id": completed_id,
+                "student_number": student_number,
+                "student_department": student_department,
+                "student_name": student_name,
+                "equip_type": equip_type,
+                "equip_unique_key": equip_unique_key
+            }
+
+            return completed_items
+        
+        completed_id = [c.completed_id for c in completed]
+        student_department = [c.student_department for c in completed]
+        equip_type = [c.equip_type for c in completed]
+        equip_unique_key = [c.equip_unique_key for c in completed]    
+
+        completed_items = {
+            "completed_id": completed_id,
+            "student_department": student_department,
+            "equip_type": equip_type,
+            "equip_unique_key": equip_unique_key
+        }
+    
+        return completed_items
