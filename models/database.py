@@ -41,6 +41,7 @@ class Borrowed(db.Model):
             if check_current:
                 continue
             if current_pending.requested_end_date < current_date:
+                i.penalty = 1
                 new_violator = Violators(
                                         borrow_id=i.borrow_id,
                                         student_number=current_pending.student_number,
@@ -50,19 +51,6 @@ class Borrowed(db.Model):
                 db.session.commit()
             pass
 
-
-        """ current_date = datetime.datetime.now()
-        for i in all_items:
-            violators = Pending.query.filter(Pending.pending_id==i.pending_id,
-                                             Pending.requested_end_date < current_date).all()
-            for x in violators:
-                new_violator = Violators(
-                                        borrow_id=x.borrow_id,
-                                        student_number=x.student_number,
-                                        equip_unique_key=x.equip_unique_key
-                                        )
-                db.session.add(new_violator)
-                db.session.commit() """
 
 class Violators(db.Model):
     __tablename__ = 'violators'
@@ -81,8 +69,10 @@ class Student(db.Model):
     student_email_address = db.Column(db.String(45), nullable=False)
     student_firstname = db.Column(db.String(50), nullable=False)
     student_surname = db.Column(db.String(50), nullable=False)
-    requested_item=db.Column(db.String(50), nullable=False)
+    requested_item=db.Column(db.String(50), nullable=True)
+    student_password=db.Column(db.String(255), nullable=False)
     status=db.Column(db.String(15))
+    account_status=db.Column(db.Boolean, default=False)
     
 
 class Admin(db.Model):

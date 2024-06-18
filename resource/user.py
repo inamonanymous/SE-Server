@@ -96,16 +96,15 @@ class Students(Resource):
     @marshal_with(student_resource_fields)
     def post(self):
         args = post_args_student.parse_args()
-        student_obj = Student(
-                student_number=args['args_student_number'].strip(),
-                student_department=args['args_student_department'].strip(),
-                student_year=args['args_student_year'].strip(),
-                student_section=args['args_student_section'].strip(),
-                student_email_address=args['args_student_email_address'].strip(),
-                student_firstname=args['args_student_firstname'].strip(),
-                student_surname=args['args_student_surname'].strip(),
-                requested_item=args['args_requested_item'].strip()
-            )
+
+        # Get the current date
+        current_date = datetime.datetime.now().date()
+
+        # Check if the requested end date is in the past
+        if args['args_requested_end_date'] < current_date:
+            return jsonify({"error": "Requested end date cannot be in the past"}), 400
+
+        student_obj = Student.query.filter_by(student_number=args['args_student_number']).first()
         equip_obj = Equipment.query.filter_by(equip_unique_key=args['args_requested_item']).first()
         if equip_obj.is_available:
             pending_obj = Pending(
@@ -116,9 +115,9 @@ class Students(Resource):
                 is_verified=0,
                 requested_end_date=args['args_requested_end_date']
             )
+            student_obj.requested_item=args['args_requested_item']
             student_obj.status='requested'
             db.session.add(pending_obj)
-            db.session.add(student_obj)
             db.session.commit()
             print('Student added Successfully')
             return student_obj, 201
@@ -143,18 +142,25 @@ class PendingItems(Resource):
     
 class BorrowedItems(Resource):
     def get(self):
-        borrowed = Borrowed.query.order_by(Borrowed.borrow_id.desc()).all()
-        borrow_id = [b.borrow_id for b in borrowed]
-        is_claimed = [b.is_claimed for b in borrowed]
-        is_returned = [b.is_returned for b in borrowed]
-        pending_id = [b.pending_id for b in borrowed]
+        join_condition = Borrowed.pending_id == Pending.pending_id
 
-        borrowed_items = {
-            "borrow_id": borrow_id,
-            "is_claimed": is_claimed,
-            "is_returned": is_returned,
-            "pending_id": pending_id
-        }
+        # Perform the join
+        joined_query = Borrowed.query.join(Pending, join_condition)
+
+        # Specify the columns you want in the final result
+        result = joined_query.with_entities(Borrowed, Pending.requested_end_date).order_by(Borrowed.borrow_id.desc()).all()
+
+        borrowed_items = [
+            {
+            "borrow_id": i.borrow_id,
+            "is_claimed": i.is_claimed,
+            "is_returned": i.is_returned,
+            "penalty": i.penalty,
+            "pending_id": i.pending_id,
+            "requested_end_date": x.isoformat()            
+            }
+         for i, x in result]
+
 
         return borrowed_items
     

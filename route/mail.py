@@ -13,7 +13,6 @@ def establish_smtp_connection():
 
 def sendMessage(student, equip_type):
     server = establish_smtp_connection()
-
     message = MIMEMultipart()
     message["From"] = root_email
     message["To"] = student.student_email_address

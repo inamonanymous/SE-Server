@@ -35,6 +35,7 @@
         border-radius: 8px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         text-align: center;
+        width: 80%;
     }
 
     .modal-text {
@@ -62,12 +63,13 @@
 </div>
 <div id="studentModal">
     <div class="modal-content">
+        <p id="studentFirstnameModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentLastnameModal" class="modal-text"><strong>Loading... </strong></p>
         <p id="studentNumberModal" class="modal-text"><strong>Loading... </strong></p>
         <p id="studentSectionModal" class="modal-text"><strong>Loading... </strong></p>
         <p id="studentDepartmentModal" class="modal-text"><strong>Loading... </strong></p>
         <p id="studentYearModal" class="modal-text"><strong>Loading... </strong></p>
-        <p id="studentFirstnameModal" class="modal-text"><strong>Loading... </strong></p>
-        <p id="studentLastnameModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentEmailModal" class="modal-text"><strong>Loading... </strong></p>
         
         <a href="#" class="modal-close" onclick="closeStudentModal()">Exit</a>
     </div>
@@ -76,32 +78,34 @@
 <table>
     <thead>
         <tr>
-            <th>Violator Id</th>
-            <th>Borrowed Item ID</th>
-            <th>Student Number</th>
-            <th>Equipment Unique Key</th>
+            <th>View Student Details</th>
+            <th>View Equipment Details</th>
             <th>Remove</th>
         </tr>
     </thead>
     <tbody>
         {% for i in violators %}
         <tr>
-            <td>{{ i.violator_id }}</td>
-            <td>{{ i.borrow_id }}</td>
             <td>
                 <a href="javascript:void(0);" onclick="showStudentModal('{{ i.student_number }}')">
-                    {{ i.student_number }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                    </svg>
                 </a>
             </td>
             <td>
                 <a href="javascript:void(0);" onclick="showEquipmentModal('{{ i.equip_unique_key }}')">
-                    {{ i.equip_unique_key }}
+                    <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                    </svg>
                 </a>
             </td>
             <td>
                 <a href="javascript:void(0);" onclick="deleteViolator('{{ i.violator_id }}')">
-                    <button class="btn btn-outline-danger">
-                        
+                    <button class="btn btn-danger">
+                        Delete
                     </button>
                 </a>
             </td>

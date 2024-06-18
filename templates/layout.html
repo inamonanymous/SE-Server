@@ -10,11 +10,17 @@
     <title>Admin</title>
 </head>
 <style>
-    /* ... your existing styles ... */
-    body {
-        background-color: #0a0b0d; /* Dark background for contrast */
-        color: #fff; /* Light text color */
-        font-family: 'Arial', sans-serif; /* Modern, clean font */
+    
+    header > div, 
+    section > div,
+    footer > div {
+        width: 1375px;
+        margin: 0 auto;
+    }
+
+    .header {
+        background-color: var(--secondary);
+        margin-bottom: 20px
     }
 
 /* Initial state of the footer - assuming you want it visible at first */
@@ -35,12 +41,12 @@
     .footer {
         text-align: center;
         padding: 5px; /* Less padding to reduce height */
-        background-color: #413434;
+        background-color: var(--secondary);
         position: fixed;
         bottom: 0;
         width: 100%;
         font-size: 0.80em; /* Smaller font size to reduce space */
-        color: aquamarine;
+        color: var(--primary);
 }
 
 .footer-content {
@@ -60,6 +66,11 @@
     font-size: 1em; /* Slightly larger font size for headers */
 }
 
+svg:hover {scale: 1.3;}
+
+svg {
+    transition: .3s;
+}
 /* Adjustments for mobile screens */
 @media (max-width: 768px) {
     .footer-content {
@@ -79,12 +90,11 @@ p.copywrite {
     margin-top: 10px; /* Added margin above copyright */
 }
 
-.header {
+.header > div{
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    background-color: #333;
     color: white;
 }
 
@@ -115,23 +125,123 @@ img {
         margin: 5px 0;
     }
 }
+
+* {
+  margin: 0;
+  padding: 0;;
+}
+
+:root {
+  --white: #ffffff;
+  --black: #000000;
+  --primary: #F8A62C;
+  --secondary: #3871C1;
+  --accent: #00CCFF;
+}
+
+h1, h2, h3, h4, h5, h6, p, a, button, footer {
+  font-family: 'Century Gothic', sans-serif
+}
+
+section {
+    margin: 10px 0 10px !important;
+}
+
+h1 {font-size: 80px; font-weight: 500; line-height: 1,06em;}
+h2 {font-size: 60px; letter-spacing: 0.03em;}
+h3 {font-size: 40px; font-weight: 700;}
+h4 {font-size: 30px; letter-spacing: 0.05em; font-weight: 500;}
+h5 {font-size: 28px; font-weight: 500;}
+h6 {font-size: 25px; font-weight: 500;}
+p {font-size: 18px; line-height: 1.55em; letter-spacing: 0.03em;}
+a {text-decoration: none; cursor: pointer; color: unset;}
+button {
+  font-size: 16px;
+  background-color: var(--secondary);
+  color: var(--white);
+  padding: 15px 50px;
+  border: 1px var(--secondary) solid;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  background-color: white;
+  color: var(--black);
+}
+button.alt {
+  background-color: var(--primary);
+  color: var(--black);
+  font-weight: 700;
+  border: 1px var(--primary) solid;
+}
+button.alt:hover {
+  background-color: transparent;
+  color: white;
+  border-color: var(--white);
+}
+ul {
+  list-style: none;
+}
+
+header, 
+section,
+footer {
+  overflow-x: clip;
+}
+
+header > div,
+section > div,
+footer > div{
+    max-width: 1365px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-column-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-space-wrap-center {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.text-color-primary {
+  color: var(--primary);
+}
+
 </style>
 <body>
     <header class="header">
-        <div class="logo">
-            <img class="img" src="{{ url_for('static', filename='img/logo.png') }}" alt="Your Logo">
+        <div>
+            <div class="logo">
+                <img class="img" src="{{ url_for('static', filename='img/logo.png') }}" alt="Your Logo">
+            </div>
+            <nav class="navbar">
+                <a href="/dashboard">Home</a>
+                <a href="http://localhost:3000" target="_blank">Services</a>
+                <a href="#" onclick="toggleFooter()">Contact</a>
+                <!-- Add other navigation links as needed -->
+            </nav>
         </div>
-        <nav class="navbar">
-            <a href="/dashboard">Home</a>
-            <a href="http://localhost:3000" target="_blank">Services</a>
-            <a href="#" onclick="toggleFooter()">Contact</a>
-            <!-- Add other navigation links as needed -->
-        </nav>
     </header>
 
     {% block body %}{% endblock %}
-    
-    <div class="footer" id="footer">
+    <footer>
+        
+    </footer>
+
+    <footer class="footer" id="footer">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>Connect with Us:</h3>
@@ -164,9 +274,9 @@ img {
 
         <!-- Copyright Section -->
         <div>
-            <p style="font-size: 0.8em;">&copy; 2023 Case Study Analysis. All rights reserved.</p>
+            <p style="font-size: 0.8em;">&copy; 2024 Software Engineering. All rights reserved.</p>
         </div>
-    </div>
+    </footer>
 
 <script>
     // Initial state

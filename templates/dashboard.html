@@ -6,53 +6,117 @@
             background-color: #007bff;
             color: #fff;
         }
+
+        .left-panel {
+            margin-bottom: 20px;
+        }
      
     </style>
 </head>
 {% endblock %}
 {% block body %}
-    <div class="left-panel">
-        <ul class="nav nav-tabs">
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0);" onclick="loadOption('borrowed-items', this)">Borrowed Items</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0);" onclick="loadOption('completed-items', this)">Completed Items</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0);" onclick="loadOption('pending-items', this)">Pending Items <span class="text-warning">{{ unverified }}</span> </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0);" onclick="loadOption('list-equipments', this)">List of Equipments  </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:void(0);" onclick="loadOption('violators', this)">Violators  </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-bg-danger" href="javascript:void(0);" onclick="logout()">Log out</a>
-            </li>
-        </ul>
-    </div>
-    <div class="content">
+    <section class="left-panel">
+        <div>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('borrowed-items', this)">Borrowed Items</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('completed-items', this)">Completed Items</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('pending-items', this)">Pending Items <span class="text-warning">{{ unverified }}</span> </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('list-equipments', this)">List of Equipments  </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('students', this)">Students  </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="javascript:void(0);" onclick="loadOption('violators', this)">Violators  </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-bg-danger" href="javascript:void(0);" onclick="logout()">Log out</a>
+                </li>
+            </ul>
+        </div>
+    </section>
+    <section class="content">
         <div id="dynamic-content">
             <h1>Welcome {{ current_user.admin_firstname | capitalize }}, {{ current_user.admin_surname | capitalize }}</h1>
         </div>
-    </div>
+    </section>
     <script>
+
+        function verifyStudent(id) {
+            if (confirm("Are you sure you want to continue?")){
+                axios.put(`/verify-student/${id}`)
+                    .then(response => {
+                        if (response.status === 204) {
+                            alert("Student verified");
+                            window.location.href = '/dashboard';
+                        } else {
+                            alert("Item not deleted");
+                        }
+                    })
+                    .catch(error => {
+                        alert("Error");
+                    });
+                }
+            }
+
+        function deleteStudent(id) {
+            if (confirm("Are you sure you want to continue?")){
+                axios.delete(`/delete-student/${id}`)
+                    .then(response => {
+                        if (response.status === 204) {
+                            alert("Student deleted");
+                            window.location.href = '/dashboard';
+                        } else {
+                            alert("Item not deleted");
+                        }
+                    })
+                    .catch(error => {
+                        alert("Error");
+                    });
+                }
+            }
+
         function deleteViolator(violator_id){
-            axios.delete(`/delete-violator/${violator_id}`).then(response => {
-                if (response.status===204){
-                    alert("Violator deleted");
-                    window.location.href='/dashboard';
-                }
-                else{
-                    alert("Item not deleted");;
-                }
-            }).catch(error => {
-                alert("Error");
-            })
+            if (confirm("Are you sure you want to continue?")){
+                axios.delete(`/delete-violator/${violator_id}`).then(response => {
+                    if (response.status===204){
+                        alert("Violator deleted");
+                        window.location.href='/dashboard';
+                    }
+                    else{
+                        alert("Item not deleted");;
+                    }
+                }).catch(error => {
+                    alert("Error");
+                })
+            }
         }
         
+        function showPendingModal(student_number){
+            axios.post(`/get_pending_data/${student_number}`).then(response => {
+                var studentModal = document.getElementById("pendingModal");
+                if (studentModal) {
+                    studentModal.style.display = 'flex';
+                    document.getElementById('type').textContent = "Equipment Type: " + response.data.args_equip_type;
+                    document.getElementById('unique_key').textContent = "Equipment Tracking ID: "+ response.data.args_equip_unique_key;
+                    document.getElementById('student_number').textContent = "Student Number: "+ response.data.args_student_number;
+                    document.getElementById('student_name').textContent = "Student Name: "+ response.data.args_student_name;
+                    document.getElementById('is_verified').textContent = "Verification status: "+ response.data.args_is_verified;
+                    document.getElementById('requested_end_date').textContent = "Expected Return Date: "+ response.data.args_requested_end_date;
+                }
+            }).catch(error => {
+                console.log(error);
+                alert(error.response);
+            });
+        }
+
         function showStudentModal(student_number){
             axios.get(`/user/student/${student_number}`).then(response => {
                 var studentModal = document.getElementById("studentModal");
@@ -64,6 +128,7 @@
                     document.getElementById('studentYearModal').textContent = "Student Year: "+ response.data.student_year;
                     document.getElementById('studentFirstnameModal').textContent = "Student Firstname: "+ response.data.student_firstname;
                     document.getElementById('studentLastnameModal').textContent = "Student Lastname: "+ response.data.student_surname;
+                    document.getElementById('studentEmailModal').textContent = "Student Lastname: "+ response.data.student_email_address;
                 }
             }).catch(error => {
                 console.log(error);
@@ -164,6 +229,9 @@
         }
         function closeStudentModal() {
             document.getElementById('studentModal').style.display = 'none';
+        }
+        function closePendingModal() {
+            document.getElementById('pendingModal').style.display = 'none';
         }
 
         function logout(){

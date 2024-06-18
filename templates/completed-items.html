@@ -4,7 +4,6 @@
 <table>
     <thead>
         <tr>
-            <th>Completed Id</th>
             <th>Student Number</th>
             <th>Student Department</th>
             <th>Student Name</th>
@@ -15,7 +14,6 @@
     <tbody>
         {% for index in range(completed['completed_id']|length) %}
         <tr>
-            <td>{{ completed['completed_id'][index] }}</td>
             <td>{{ completed['student_number'][index] }}</td>
             <td>{{ completed['student_department'][index] }}</td>
             <td>{{ completed['student_name'][index] }}</td>

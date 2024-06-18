@@ -1,0 +1,122 @@
+{% extends "tables.html" %}
+{% block body %}
+
+<style>
+    #studentModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* Ensure it's on top of other elements */
+        display: none; /* Initially hidden */
+    }
+    #equipmentModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* Ensure it's on top of other elements */
+        display: none; /* Initially hidden */
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 80%;
+    }
+
+    .modal-text {
+        color: #333;
+        font-size: 14px;
+    }
+
+    .modal-close {
+        color: #0066cc; /* Adjusted close link color */
+        text-decoration: none;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 15px;
+        display: inline-block;
+    }
+</style>
+<table>
+    <thead>
+        <tr>
+            <th>
+                ID
+            </th>
+            <th>
+                Firstname
+            </th>
+            <th>
+                Surname
+            </th>
+            <th>
+                Department
+            </th>
+            <th>
+                Account Status
+            </th>
+            <th>
+                Action
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in all_students %}
+            <tr>
+                <td>
+                    <a href="#" onclick="showStudentModal('{{ i.student_number }}')">
+                        {{ i.student_number }}
+                    </a>
+                </td>
+                <td>{{ i.student_firstname }}</td>
+                <td>{{ i.student_surname }}</td>
+                <td>{{ i.student_department }}</td>
+                <td>{{ 'Verified' if i.account_status else 'Unverified' }}</td>
+                {% if i.account_status %}
+                    <td style="    align-items: center;
+                    display: flex;
+                    flex-direction: column;">
+                        <button onclick="deleteStudent('{{ i.student_id }}')" class="btn btn-danger">Delete</button>
+                    </td>
+                {% else %}
+                    <td style="    align-items: center;
+                    display: flex;
+                    flex-direction: column;">
+                        <button onclick="verifyStudent('{{ i.student_id }}')" style="margin-bottom: 10px" class="btn btn-info">Verify</button>                    
+                        <button onclick="deleteStudent('{{ i.student_id }}')" class="btn btn-warning">Reject</button>
+                        </a>
+                    </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div id="studentModal">
+    <div class="modal-content">
+        <p id="studentFirstnameModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentLastnameModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentNumberModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentSectionModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentDepartmentModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentYearModal" class="modal-text"><strong>Loading... </strong></p>
+        <p id="studentEmailModal" class="modal-text"><strong>Loading... </strong></p>
+        
+        <a href="#" class="modal-close" onclick="closeStudentModal()">Exit</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, url_for, session, flash, redirect, jsonify
+from flask import Blueprint, render_template, request, url_for, session, flash, redirect, jsonify, abort
 from models.database import Admin, Pending, Student, Borrowed, Equipment, db , Completed, Violators
 from werkzeug.security import check_password_hash, generate_password_hash
 from resource.user import PendingItems, BorrowedItems, CompletedItems, ShowEquipments
@@ -7,12 +7,65 @@ from route.mail import sendMessage
 
 admin_bp = Blueprint('admin', __name__)
 
+@admin_bp.route('/get_pending_data/<int:id>', methods=['POST'])
+def get_pending_data(id):
+    target_pending = Pending.query.filter_by(pending_id=id).first()
+    if not target_pending:
+        abort(404)
+    data = {
+        "args_equip_type": target_pending.equip_type,
+        "args_equip_unique_key": target_pending.equip_unique_key,
+        "args_student_number": target_pending.student_number,
+        "args_student_name": target_pending.student_name,
+        "args_is_verified": target_pending.is_verified,
+        "args_requested_end_date": target_pending.requested_end_date
+    }
+    return jsonify(data)
+
+@admin_bp.route('/public/api/get-return/date/<int:id>', methods=["GET"])
+def public_api_get_return_date(id):
+    target_pending = Pending.query.filter_by(pending_id=id).first()
+    if not target_pending:
+        return jsonify({"message": "no records found"})
+    data = {
+        "return_date": target_pending.requested_end_date
+    }
+    
+    return jsonify(data), 200
+
+@admin_bp.route('/verify-student/<int:id>', methods=['PUT'])
+def verify_student(id):
+    if 'admin_login' in session and request.method=="PUT":
+        target_student = Student.query.filter_by(student_id=id).first()
+        if not target_student:
+            return jsonify({"message": "Student not found"}), 404
+        target_student.account_status=True
+        db.session.commit()
+        return jsonify({"message": "Student deleted"}), 204
+    return redirect(url_for('index'))
+
+@admin_bp.route('/delete-student/<int:id>', methods=['DELETE'])
+def delete_student(id):
+    if 'admin_login' in session and request.method=="DELETE":
+        target_student = Student.query.filter_by(student_id=id).first()
+        if not target_student:
+            return jsonify({"message": "Student not found"}), 404
+        db.session.delete(target_student)
+        db.session.commit()
+        return jsonify({"message": "Student deleted"}), 204
+    return redirect(url_for('index'))
+
+
 @admin_bp.route('/delete-violator/<int:id>', methods=['DELETE'])
 def delete_violator(id):
     if 'admin_login' in session and request.method=="DELETE":
         target_violator = Violators.query.filter_by(violator_id=id).first()
         if not target_violator:
             return jsonify({"message": "Violator not found"}), 404
+        target_borrowed = Borrowed.query.filter_by(borrow_id=target_violator.borrow_id).first()
+        if not target_borrowed:
+            return jsonify({"message": "Borrowed object not found"}), 404
+        target_borrowed.penalty = 0
         db.session.delete(target_violator)
         db.session.commit()
         return jsonify({"message": "Violator deleted"}), 204
@@ -74,13 +127,15 @@ def load_option(option):
         counter = 0
         for i in pending:
             counter +=1
-            print(f"{counter}: {i} \n")
+
+        all_students = Student.query.all()
         content = render_template(f'{option}.html',
                                    borrowed=borrowed, 
                                    pending=pending, 
                                    completed=completed,
                                    equipments=equipments,
-                                   violators=violators)
+                                   violators=violators,
+                                   all_students=all_students)
         return content
     return redirect('index')
 
@@ -106,7 +161,6 @@ def return_item(id):
             equip_obj.is_available = True
             equip_obj.is_pending = False
             db.session.add(completed_obj)
-            db.session.delete(student_obj)
             db.session.delete(pending_obj)
             db.session.delete(borrowed_obj)
             if violator_checker:
@@ -159,7 +213,6 @@ def disproof_item(pending_id):
         borrowed_obj = Borrowed.query.filter_by(pending_id=pending_obj.pending_id).first()
         if not pending_obj.is_verified or not borrowed_obj:
             db.session.delete(pending_obj)
-            db.session.delete(student_obj)
             equipment_obj.is_available=1
             equipment_obj.is_pending=0
             db.session.commit()       
@@ -184,7 +237,6 @@ def verify_item(unique):
             pending_obj.is_pending=1
             student_obj.status = 'to-receive'
             borrowed_obj = Borrowed(
-                time_quota=pending_obj.time,
                 is_returned=0,
                 pending_id=pending_obj.pending_id
             )
